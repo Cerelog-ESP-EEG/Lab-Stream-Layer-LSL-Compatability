@@ -9,7 +9,7 @@ from pylsl import StreamInfo, StreamOutlet
 INITIAL_BAUD_RATE = 9600
 FINAL_BAUD_RATE = 115200
 FIRMWARE_BAUD_RATE_INDEX = 0x04
-SAMPLING_RATE_HZ = 250.0
+SAMPLING_RATE_HZ = 500 
 
 # --- Packet Constants ---
 DATA_PACKET_START_MARKER = 0xABCD
@@ -32,7 +32,8 @@ BOARD_DESCRIPTIONS = ["USB-SERIAL CH340", "CH340"]
 def convert_to_microvolts(raw_val, vref=4.5, gain=24):
     """Converts raw 24-bit integer to microvolts."""
     scale_factor = (2 * vref / gain) / (2**24)
-    return raw_val * scale_factor * 1_000_000
+    outputV = (raw_val * scale_factor * 1000000)
+    return outputV
 
 def find_and_open_board():
     """
@@ -111,7 +112,7 @@ def main():
     # Name: Cerelog_EEG
     # Type: EEG (Required by OpenBCI GUI)
     # Channels: 8
-    # Rate: 250
+    # Rate: 500
     # Format: float32
     print("Creating LSL Stream Outlet...")
     info = StreamInfo('Cerelog_EEG', 'EEG', ADS1299_NUM_CHANNELS, SAMPLING_RATE_HZ, 'float32', 'cerelog_uid_1234')
