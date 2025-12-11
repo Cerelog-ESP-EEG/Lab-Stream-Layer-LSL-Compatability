@@ -10,8 +10,6 @@ First install dependancies with terminal via:
 
 
 
-2. OS-Specific Instructions
-
    
 
 
