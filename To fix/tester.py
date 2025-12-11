@@ -114,7 +114,7 @@ def main():
     next_schedule = local_clock()
 
     print("\n>>> STREAMING WITH ACTIVE DC BLOCKER >>>")
-    print(f"Hardware Gain: {HARDWARE_GAIN} | GUI Cal: {GUI_CORRECTION_FACTOR:.2f}")
+    print(f"Hardware Gain: {HARDWARE_GAIN} | GUI Correction: {GUI_CORRECTION_FACTOR:.2f}")
     
     try:
         while True:
