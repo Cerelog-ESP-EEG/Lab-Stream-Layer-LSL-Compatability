@@ -16,7 +16,8 @@ First install dependancies with terminal via:
 
 
 
-3. run python cerelog_lsl.py in terminal: **Note: This python script is for USB** If want **WiFI Support [Read: - Under Dev - More info](https://github.com/Cerelog-ESP-EEG/WiFi_Support)**
+3. run python cerelog_lsl.py in terminal: **Note: This python script is for USB**
+For use with **WiFI [Read This (Currently Under Dev)](https://github.com/Cerelog-ESP-EEG/WiFi_Support)**
  
  ## Note if error:  
 
