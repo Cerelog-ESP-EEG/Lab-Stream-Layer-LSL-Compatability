@@ -4,7 +4,7 @@ Lab Stream Layer (LSL) Compatability
 
 To stream to the forked OpenBCI Gui we first need to have th board stream lsl
 
-## STEPS:
+## STEPS ():
 
 First install dependancies with terminal via:
 
@@ -16,10 +16,9 @@ First install dependancies with terminal via:
 
 
 
-3. run python cerelog_lsl.py in terminal:
+3. run python cerelog_lsl.py in terminal: **Note: This python script is for USB**
 
-
-
+**WiFI Support (Under Dev)[More info](https://github.com/Cerelog-ESP-EEG/WiFi_Support))**
  
  ## Note if error:  
 
