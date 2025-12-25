@@ -4,6 +4,8 @@ Lab Stream Layer (LSL) Compatability
 
 To stream to the forked OpenBCI Gui we first need to have th board stream lsl
 
+# STEPS
+
 First install dependancies with terminal via:
 
 1. pip install pyserial numpy pylsl
@@ -15,6 +17,9 @@ First install dependancies with terminal via:
 
 
 3. run python cerelog_lsl.py in terminal:
+
+
+# That easy!
 
  
  ## Note if error:  
