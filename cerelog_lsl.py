@@ -19,9 +19,11 @@ HARDWARE_GAIN = 24
 
 # --- GUI CORRECTION SCALAR ---
 # 1. The GUI divides incoming LSL data by 24 (assuming it's raw). So we multiply by 24.
-# 2. We keep the ~0.61 calibration we found earlier to match the amplitude.
-# Combined Factor: 24 * 0.6133 = 14.719
-GUI_CORRECTION_FACTOR = 24.0 * 0.6133
+# 2. We keep the ~6.1 calibration we found earlier to match the amplitude. Real cal is 0.6 but GUI multiplies voltage by 10 on LSL input
+
+GUI_CORRECTION_FACTOR = 0.94 * 24.0 / 10 / 2
+# Old Gui Correction GUI_CORRECTION_FACTOR = 0.6133 * 24.0 
+
 
 # --- Packet Constants ---
 DATA_PACKET_START_MARKER = 0xABCD
