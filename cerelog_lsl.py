@@ -59,40 +59,129 @@ def convert_to_microvolts(raw_val):
     # Scale up for the GUI
     return outputV * GUI_CORRECTION_FACTOR
 
+def _detect_board_type(port_info):
+    """Detect board type from USB VID/PID. Returns 'V1', 'V2', or 'unknown'."""
+    if port_info.vid == 0x1A86:
+        return "V1"
+    if port_info.vid == 0x303A:
+        return "V2"
+    return "unknown"
+
+def _build_handshake(reg_addr, reg_val):
+    """Build the handshake packet with the given register address and value."""
+    current_unix_time = int(time.time())
+    checksum_payload = struct.pack('>BI', 0x02, current_unix_time) + bytes([reg_addr, reg_val])
+    checksum = sum(checksum_payload) & 0xFF
+    return (struct.pack('>BB', HANDSHAKE_START_MARKER_1, 0xBB)
+            + checksum_payload
+            + struct.pack('>B', checksum)
+            + struct.pack('>BB', HANDSHAKE_END_MARKER_1, 0xDD))
+
+def _try_read_data(ser):
+    """Read from serial and check for the data start marker. Returns bytes or None."""
+    bytes_received = ser.read(DATA_PACKET_TOTAL_SIZE * 5)
+    if bytes_received and DATA_PACKET_START_MARKER.to_bytes(2, 'big') in bytes_received:
+        return bytes_received
+    # Diagnostic output on failure
+    n = len(bytes_received) if bytes_received else 0
+    snippet = bytes_received[:20].hex() if bytes_received else "(empty)"
+    print(f"  No data marker found. Received {n} bytes, hex preview: {snippet}")
+    return None
+
+def _connect_v1(ser):
+    """V1 (CH340 UART): open at 9600, handshake with baud switch to 115200."""
+    print("  V1 strategy: 9600 → handshake → 115200")
+    time.sleep(5)
+    if ser.in_waiting > 0:
+        ser.read(ser.in_waiting)
+
+    print("  Sending handshake (reg_addr=0x01, baud switch)...")
+    ser.write(_build_handshake(0x01, FIRMWARE_BAUD_RATE_INDEX))
+    time.sleep(0.1)
+    ser.baudrate = FINAL_BAUD_RATE
+    print(f"  Switched to {ser.baudrate} baud...")
+    time.sleep(0.5)
+    ser.reset_input_buffer()
+
+    return _try_read_data(ser) is not None
+
+def _connect_v2(ser):
+    """V2 (ESP32-S3 USB CDC): wait for firmware boot, then handshake for timestamp sync.
+
+    pyserial's default DTR=True resets the ESP32-S3 on port open. Firmware setup
+    takes ~4s (2s pin init + 0.5s SPI + 1.2s ADS1299; SD init runs on core 0 in
+    background). After setup the board streams data without waiting for a handshake.
+    """
+    print("  V2 strategy: wait for firmware boot, then handshake")
+    V2_BOOT_WAIT = 5    # seconds — firmware enters loop() in ~4s
+    V2_MAX_ATTEMPTS = 3
+    V2_RETRY_WAIT = 2   # seconds between retries
+
+    print(f"  Waiting {V2_BOOT_WAIT}s for firmware boot...")
+    time.sleep(V2_BOOT_WAIT)
+
+    for attempt in range(1, V2_MAX_ATTEMPTS + 1):
+        # Flush boot log text / stale data
+        if ser.in_waiting > 0:
+            ser.read(ser.in_waiting)
+
+        print(f"  Attempt {attempt}/{V2_MAX_ATTEMPTS}: sending handshake...")
+        ser.write(_build_handshake(0x01, FIRMWARE_BAUD_RATE_INDEX))
+        time.sleep(0.5)
+        ser.reset_input_buffer()
+
+        if _try_read_data(ser) is not None:
+            return True
+
+        if attempt < V2_MAX_ATTEMPTS:
+            print(f"  Retrying in {V2_RETRY_WAIT}s...")
+            time.sleep(V2_RETRY_WAIT)
+
+    return False
+
 def find_and_open_board():
     print("Searching for Cerelog Board...")
     ports = serial.tools.list_ports.comports()
-    candidate_ports = [p.device for p in ports if (p.vid and p.pid and {'vid': p.vid, 'pid': p.pid} in BOARD_USB_IDS) or (p.description and any(desc.lower() in p.description.lower() for desc in BOARD_DESCRIPTIONS))]
-    if not candidate_ports: candidate_ports = [p.device for p in ports]
 
-    for port_name in candidate_ports:
-        print(f"--- Testing port: {port_name} ---")
+    # Build candidate list with board type tags
+    candidates = []
+    for p in ports:
+        if (p.vid and p.pid and {'vid': p.vid, 'pid': p.pid} in BOARD_USB_IDS) or \
+           (p.description and any(desc.lower() in p.description.lower() for desc in BOARD_DESCRIPTIONS)):
+            candidates.append((p.device, _detect_board_type(p)))
+    if not candidates:
+        candidates = [(p.device, _detect_board_type(p)) for p in ports]
+
+    for port_name, board_type in candidates:
+        print(f"--- Testing port: {port_name} (detected: {board_type}) ---")
         ser = None
         try:
-            ser = serial.Serial(port_name, INITIAL_BAUD_RATE, timeout=2)
-            time.sleep(5)
-            if ser.in_waiting > 0: ser.read(ser.in_waiting)
-
-            print(f"Sending handshake...")
-            current_unix_time = int(time.time())
-            checksum_payload = struct.pack('>BI', 0x02, current_unix_time) + bytes([0x01, FIRMWARE_BAUD_RATE_INDEX])
-            checksum = sum(checksum_payload) & 0xFF
-            handshake_packet = struct.pack('>BB', HANDSHAKE_START_MARKER_1, 0xBB) + checksum_payload + struct.pack('>B', checksum) + struct.pack('>BB', HANDSHAKE_END_MARKER_1, 0xDD)
-            ser.write(handshake_packet)
-            time.sleep(0.1) 
-            ser.baudrate = FINAL_BAUD_RATE
-            print(f"Switched to {ser.baudrate} baud...")
-            time.sleep(0.5)
-            ser.reset_input_buffer()
-
-            bytes_received = ser.read(DATA_PACKET_TOTAL_SIZE * 5)
-            if bytes_received and DATA_PACKET_START_MARKER.to_bytes(2, 'big') in bytes_received:
-                print(f"SUCCESS on: {port_name}")
-                return ser
+            if board_type == "V2":
+                # Open without asserting DTR to avoid resetting the ESP32-S3.
+                # If the board is already running, we connect instantly.
+                # If it was just plugged in, the firmware boots on its own.
+                ser = serial.Serial()
+                ser.port = port_name
+                ser.baudrate = FINAL_BAUD_RATE
+                ser.timeout = 2
+                ser.dtr = False
+                ser.rts = False
+                ser.open()
+                if _connect_v2(ser):
+                    print(f"SUCCESS on: {port_name} ({board_type})")
+                    return ser
             else:
+                # V1 or unknown — use the original UART handshake
+                ser = serial.Serial(port_name, INITIAL_BAUD_RATE, timeout=2)
+                if _connect_v1(ser):
+                    print(f"SUCCESS on: {port_name} ({board_type})")
+                    return ser
+
+            ser.close()
+        except serial.SerialException as e:
+            print(f"  Serial error: {e}")
+            if ser:
                 ser.close()
-        except serial.SerialException:
-            if ser: ser.close()
     return None
 
 def main():
