@@ -40,8 +40,11 @@ ADS1299_NUM_STATUS_BYTES = 3
 ADS1299_BYTES_PER_CHANNEL = 3
 
 # --- Port Detection ---
-BOARD_USB_IDS = [{'vid': 0x1A86, 'pid': 0x7523}]
-BOARD_DESCRIPTIONS = ["USB-SERIAL CH340", "CH340"]
+BOARD_USB_IDS = [
+    {'vid': 0x1A86, 'pid': 0x7523},  # V1 - CH340 serial converter
+    {'vid': 0x303A, 'pid': 0x1001},  # V2 - ESP32-S3 native USB
+]
+BOARD_DESCRIPTIONS = ["USB-SERIAL CH340", "CH340", "USB JTAG", "ESP32-S3"]
 
 def convert_to_microvolts(raw_val):
     """
