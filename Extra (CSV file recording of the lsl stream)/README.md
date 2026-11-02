@@ -11,10 +11,10 @@ simon@Macmini Lab-Stream-Layer-LSL-Compatability % python3 cerelog_lsl.py
 **Terminal 2** – once Terminal 1 shows `>>> STREAMING WITH ACTIVE DC BLOCKER >>>`, start the CSV logger:
 
 ```
-simon@Macmini Lab-Stream-Layer-LSL-Compatability % python3 Extra/lsl_to_csv_logmaker.py
+simon@Macmini Lab-Stream-Layer-LSL-Compatability % python3 "Extra (CSV file recording of the lsl stream)/lsl_to_csv_logmaker.py"
 ```
 
-Press `Ctrl+C` in Terminal 2 to stop recording. The CSV is saved in this `Extra/` folder as `Cerelog_EEG_YYYYMMDD_HHMMSS.csv`.
+Press `Ctrl+C` in Terminal 2 to stop recording. The CSV is saved in this folder as `Cerelog_EEG_YYYYMMDD_HHMMSS.csv`.
 
 Each row is `Timestamp, CH1 … CH8` (or `… CH16` on 16-channel boards), the same as the SD-card logs minus the Status column:
 - **Timestamp** – milliseconds since the log started

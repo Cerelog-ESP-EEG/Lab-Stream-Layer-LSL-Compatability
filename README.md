@@ -24,7 +24,7 @@ For use with **WiFI (Currently Under Dev) [Read This](https://github.com/Cerelog
 
 ## Recording the LSL Stream to CSV (Optional)
 
-Check out the [Extra](Extra/) folder for a Python script (`lsl_to_csv_logmaker.py`) that takes the running LSL stream from `cerelog_lsl.py` and records it to CSV files on your computer. See [Extra/README.md](Extra/README.md) for how to run it.
+Check out the [Extra (CSV file recording of the lsl stream)](<Extra%20(CSV%20file%20recording%20of%20the%20lsl%20stream)/>) folder for a Python script (`lsl_to_csv_logmaker.py`) that takes the running LSL stream from `cerelog_lsl.py` and records it to CSV files on your computer. See [its README](<Extra%20(CSV%20file%20recording%20of%20the%20lsl%20stream)/README.md>) for how to run it.
  
  ## Note if error:  
 
