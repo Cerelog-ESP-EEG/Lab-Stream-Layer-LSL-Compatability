@@ -20,6 +20,11 @@ First install dependancies with terminal via:
 
 
 For use with **WiFI (Currently Under Dev) [Read This](https://github.com/Cerelog-ESP-EEG/WiFi_Support)**
+
+
+## Recording the LSL Stream to CSV (Optional)
+
+Check out the [Extra](Extra/) folder for a Python script (`lsl_to_csv_logmaker.py`) that takes the running LSL stream from `cerelog_lsl.py` and records it to CSV files on your computer. See [Extra/README.md](Extra/README.md) for how to run it.
  
  ## Note if error:  
 
